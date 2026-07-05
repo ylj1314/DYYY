@@ -7,8 +7,23 @@
 NS_ASSUME_NONNULL_BEGIN
 
 @class YYAnimatedImageView;
+@class AVAssetTrack;
 
 @interface DYYYUtils : NSObject
+
+#pragma mark - Public Model Filtering Utilities (公共模型过滤工具)
+
+/** 使用抖音模型自身的广告判定及明确广告字段识别广告作品。 */
++ (BOOL)isAdvertisementAwemeModel:(id)model;
+
+/** 识别作品模型或搜索结果包装模型中的广告。 */
++ (BOOL)isAdvertisementContainerModel:(id)model;
+
+/** 从列表中移除广告模型；未启用屏蔽广告时原样返回。 */
++ (NSArray *)arrayByRemovingAdvertisements:(id)array;
+
+/** 在作品模型字段尚未完成映射时，从原始响应中识别明确广告标记。 */
++ (BOOL)isAdvertisementRawData:(id)rawData;
 
 /**
  * @brief 处理并更新UILabel以显示IP属地。
@@ -84,6 +99,11 @@ NS_ASSUME_NONNULL_BEGIN
  */
 + (BOOL)isDarkMode;
 
+/**
+ * 检查当前抖音背景设置是否为浅色
+ */
++ (BOOL)usesDouyinLightBackground;
+
 #pragma mark - Public File Management (公共文件管理)
 
 /**格式化大小
@@ -116,6 +136,105 @@ NS_ASSUME_NONNULL_BEGIN
  * 在缓存目录下生成指定文件名的完整路径
  */
 + (NSString *)cachePathForFilename:(NSString *)filename;
+
+#pragma mark - Public Media Helper Methods (公共媒体工具方法)
+
+/**
+ * 根据文件头判断媒体格式（webp/heic/heif/gif/png/jpeg）
+ */
++ (NSString *)detectFileFormat:(NSURL *)fileURL;
+
+/**
+ * 媒体类型文案
+ */
++ (NSString *)mediaTypeDescription:(MediaType)mediaType;
+
+/**
+ * 缩放图片到指定尺寸
+ */
++ (UIImage *)resizeImage:(UIImage *)image toSize:(CGSize)size;
+
+/**
+ * 计算图片在容器内按比例居中的绘制区域
+ */
++ (CGRect)rectForImageAspectFit:(CGSize)imageSize inSize:(CGSize)containerSize;
+
+/**
+ * 计算视频轨道在目标尺寸下的等比变换
+ */
++ (CGAffineTransform)transformForAssetTrack:(AVAssetTrack *)track targetSize:(CGSize)targetSize;
+
+/**
+ * 计算图片在目标尺寸下的等比变换
+ */
++ (CGAffineTransform)transformForImage:(UIImage *)image targetSize:(CGSize)targetSize;
+
+/**
+ * 判断图片是否为带 heif/heic URL 的 BDImage
+ */
++ (BOOL)isBDImageWithHeifURL:(UIImage *)image;
+
+/**
+ * 从 YYAnimatedImageView 提取帧数组
+ */
++ (NSArray *)getImagesFromYYAnimatedImageView:(YYAnimatedImageView *)imageView;
+
+/**
+ * 获取 YYAnimatedImageView 动图总时长
+ */
++ (CGFloat)getDurationFromYYAnimatedImageView:(YYAnimatedImageView *)imageView;
+
+/**
+ * 使用 YYImage 解码动图数据，返回帧图像和总时长
+ */
++ (BOOL)framesFromAnimatedData:(NSData *)data
+                         scale:(CGFloat)scale
+                        images:(NSArray<UIImage *> *_Nullable *)images
+                 totalDuration:(CGFloat *_Nullable)totalDuration;
+
+/**
+ * 根据帧数组生成 GIF 文件
+ */
++ (BOOL)createGIFWithImages:(NSArray *)images duration:(CGFloat)duration path:(NSString *)path progress:(void (^)(float progress))progressBlock;
+
+/**
+ * 保存 GIF 到相册并清理临时文件
+ */
++ (void)saveGIFToPhotoLibrary:(NSString *)path completion:(void (^)(BOOL success, NSError *error))completion;
+
+/**
+ * 保存 GIF(URL) 到相册并删除源文件
+ */
++ (void)saveGifToPhotoLibrary:(NSURL *)gifURL completion:(void (^)(BOOL success))completion;
+
+/**
+ * 判断视频是否包含音频轨道
+ */
++ (BOOL)videoHasAudio:(NSURL *)videoURL;
+
+/**
+ * 下载音频并合并到视频
+ */
++ (void)downloadAudioAndMergeWithVideo:(NSURL *)videoURL
+                              audioURL:(NSURL *)audioURL
+                            completion:(void (^)(BOOL success, NSURL *mergedURL))completion;
+
+/**
+ * 合并视频和音频
+ */
++ (void)mergeVideo:(NSURL *)videoURL
+         withAudio:(NSURL *)audioURL
+        completion:(void (^)(BOOL success, NSURL *mergedURL))completion;
+
+/**
+ * 将 WebP 转换为 GIF
+ */
++ (void)convertWebpToGifSafely:(NSURL *)webpURL completion:(void (^)(NSURL *gifURL, BOOL success))completion;
+
+/**
+ * 将 HEIC/HEIF 转换为 GIF
+ */
++ (void)convertHeicToGif:(NSURL *)heicURL completion:(void (^)(NSURL *gifURL, BOOL success))completion;
 
 #pragma mark - Public Color Scheme Methods (公共颜色方案方法)
 
@@ -166,6 +285,17 @@ NS_ASSUME_NONNULL_BEGIN
  *         - 如果无法解析或 `frame` 无效，返回 `nil`。
  */
 + (CALayer *)layerFromSchemeHexString:(NSString *)hexString frame:(CGRect)frame;
+
+#pragma mark - Debug Utilities (调试工具)
+
+/**
+ * @brief 递归 dump 所有 UIWindow 的视图树到指定路径（后台线程写入）。
+ *        输出包含类名、地址、frame、alpha、hidden、userInteractionEnabled、
+ *        accessibilityLabel、tag 以及 UILabel.text 等字段，便于后续定位未知视图。
+ * @param filePath 输出文件路径，如 @"/var/mobile/douyin_view_tree.txt"。在沙盒环境下会自动
+ *                 fallback 到 Documents 目录。
+ */
++ (void)dumpAllWindowsViewTreeToFile:(NSString *)filePath;
 
 #pragma mark - Version Utilities
 
